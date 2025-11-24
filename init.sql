@@ -1,44 +1,46 @@
-CREATE EXTENSION IF NOT EXISTS pgcrypto;
-
+-- ================================
+-- 1. USERS TABLE (Authentication)
+-- ================================
 CREATE TABLE IF NOT EXISTS users (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    name VARCHAR(255) NOT NULL,
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100),
     email VARCHAR(255) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
-    created_at TIMESTAMPTZ DEFAULT now()
+    password_hash TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT NOW()
 );
 
+-- ================================
+-- 2. EPISODES TABLE
+-- ================================
 CREATE TABLE IF NOT EXISTS episodes (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id SERIAL PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
+    description TEXT,
     audio_url TEXT NOT NULL,
     duration_seconds INT,
-    position INT DEFAULT 0,
-    created_at TIMESTAMPTZ DEFAULT now()
+    created_at TIMESTAMP DEFAULT NOW()
 );
 
+-- ================================
+-- 3. LISTENING PROGRESS TABLE
+-- ================================
 CREATE TABLE IF NOT EXISTS listening_progress (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-    episode_id UUID REFERENCES episodes(id) ON DELETE CASCADE,
-    last_position_seconds INT DEFAULT 0,
-    completed BOOLEAN DEFAULT FALSE,
-    updated_at TIMESTAMPTZ DEFAULT now(),
-    UNIQUE(user_id, episode_id)
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    episode_id INTEGER NOT NULL REFERENCES episodes(id) ON DELETE CASCADE,
+    progress_seconds INT DEFAULT 0,
+    updated_at TIMESTAMP DEFAULT NOW(),
+
+    UNIQUE (user_id, episode_id)
 );
 
--- seed episodes (replace these URLs with real hosted audio if available)
-INSERT INTO episodes (title, audio_url, duration_seconds)
+-- ================================
+-- 4. INSERT SAMPLE EPISODES
+-- ================================
+INSERT INTO episodes (title, description, audio_url, duration_seconds)
 VALUES
-('Intro to Financial Literacy', 'https://cdn.simple-audio.example/finance_ep1.mp3', 420)
+('Introduction to Finance', 'Basics of financial literacy.', 'https://example.com/audio1.mp3', 300),
+('Saving & Budgeting', 'Learn how to manage money.', 'https://example.com/audio2.mp3', 420),
+('Investing Basics', 'Beginner friendly investing concepts.', 'https://example.com/audio3.mp3', 600)
 ON CONFLICT DO NOTHING;
 
-INSERT INTO episodes (title, audio_url, duration_seconds)
-VALUES
-('Budgeting Basics', 'https://cdn.simple-audio.example/finance_ep2.mp3', 900)
-ON CONFLICT DO NOTHING;
-
-INSERT INTO episodes (title, audio_url, duration_seconds)
-VALUES
-('Saving & Emergency Funds', 'https://cdn.simple-audio.example/finance_ep3.mp3', 780)
-ON CONFLICT DO NOTHING;
